@@ -4,6 +4,8 @@
       v-model="labelsString"
       placeholder="Метки"
       :fullWidth="true"
+      :hasError="!!validationErrors.labels"
+      :errorMessage="validationErrors.labels || ''"
     />
 
     <BaseSelect
@@ -11,12 +13,16 @@
       :options="accountTypeOptions"
       @change="handleTypeChange"
       :fullWidth="true"
+      :hasError="!!validationErrors.type"
+      :errorMessage="validationErrors.type || ''"
     />
 
     <BaseInput
       v-model="internalAccount.login"
       placeholder="Логин"
       :fullWidth="true"
+      :hasError="!!validationErrors.login"
+      :errorMessage="validationErrors.login || ''"
     />
 
     <div class="relative w-full">
@@ -26,6 +32,8 @@
         v-model="passwordValue"
         placeholder="Пароль"
         :fullWidth="true"
+        :hasError="!!validationErrors.password"
+        :errorMessage="validationErrors.password || ''"
       />
       <button
         v-if="internalAccount.type === 'Локальная'"
@@ -55,8 +63,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive, computed } from 'vue'; 
+import { ref, watch, reactive, computed } from 'vue';
 import type { Account, Label } from '../types/account';
+import { validateLabel, validateLogin, validatePassword } from '../utils/validation'; 
 import BaseInput from './baseInput.vue';
 import BaseSelect from './baseSelect.vue';
 
@@ -66,13 +75,19 @@ const props = defineProps<{
 
 const emit = defineEmits(['update', 'delete']);
 
+interface ValidationErrors {
+  labels: string | null;
+  type: string | null;
+  login: string | null;
+  password: string | null;
+}
+
 const internalAccount = reactive<Omit<Account, 'labels'>>({
   id: props.account.id,
   type: props.account.type,
   login: props.account.login,
   password: props.account.password,
 });
-
 
 const labelsString = ref(props.account.labels.map(l => l.text).join(';'));
 
@@ -83,27 +98,41 @@ const passwordValue = computed({
   }
 });
 
-
-const passwordFieldType = ref('password'); 
+const passwordFieldType = ref('password');
 
 const accountTypeOptions = [
   { label: 'Локальная', value: 'Локальная' },
   { label: 'LDAP', value: 'LDAP' },
 ];
 
+const validationErrors = reactive<ValidationErrors>({
+  labels: null,
+  type: null,
+  login: null,
+  password: null,
+});
+
 const togglePasswordVisibility = () => {
   passwordFieldType.value = passwordFieldType.value === 'password' ? 'text' : 'password';
 };
-
 
 const handleTypeChange = (value: string) => {
   internalAccount.type = value as 'Локальная' | 'LDAP';
   if (internalAccount.type === 'LDAP') {
     internalAccount.password = null; 
+    validationErrors.password = null; 
   } else {
     internalAccount.password = ''; 
   }
-  emitUpdate(); 
+  validateAndEmitUpdate(); 
+};
+
+const validateFields = () => {
+  validationErrors.labels = validateLabel(labelsString.value);
+  validationErrors.login = validateLogin(internalAccount.login);
+  validationErrors.password = validatePassword(internalAccount.password, internalAccount.type);
+
+  return !Object.values(validationErrors).some(error => error !== null);
 };
 
 const emitUpdate = () => {
@@ -119,19 +148,48 @@ const emitUpdate = () => {
   emit('update', updatedAccount);
 };
 
+
+let updateTimeout: ReturnType<typeof setTimeout> | null = null;
+const DEBOUNCE_DELAY = 500;
+
+const validateAndEmitUpdate = () => {
+
+  if (updateTimeout) {
+    clearTimeout(updateTimeout);
+  }
+  updateTimeout = setTimeout(() => {
+    if (validateFields()) { 
+      emitUpdate();
+    }
+  }, DEBOUNCE_DELAY);
+};
+
 watch([internalAccount, labelsString], () => {
-  emitUpdate();
+  validateAndEmitUpdate();
 }, { deep: true });
 
 watch(() => props.account, (newVal) => {
-  if (newVal.id !== internalAccount.id) {
+  const currentLabelsStr = labelsString.value;
+  const newLabelsStr = newVal.labels.map(l => l.text).join(';');
+
+  if (newVal.id !== internalAccount.id ||
+      newVal.type !== internalAccount.type ||
+      newVal.login !== internalAccount.login ||
+      newVal.password !== internalAccount.password ||
+      currentLabelsStr !== newLabelsStr) {
+
     Object.assign(internalAccount, {
       id: newVal.id,
       type: newVal.type,
       login: newVal.login,
       password: newVal.password,
     });
-    labelsString.value = newVal.labels.map(l => l.text).join(';');
+    labelsString.value = newLabelsStr;
+    validateFields(); 
   }
 }, { deep: true });
+watch([() => internalAccount.id, () => labelsString.value], () => {
+  validateFields();
+}, { immediate: true });
 </script>
+
