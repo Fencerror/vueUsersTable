@@ -27,5 +27,5 @@ export const validatePassword = (value: string | null, accountType: 'Локал�
       return 'Пароль не должен превышать 100 символов.';
     }
   }
-  return null; 
+  return null;
 };

@@ -4,28 +4,27 @@
       :value="modelValue"
       @change="updateValue"
       :class="[
-        'border rounded px-3 py-2 w-full',
-        {'border-red-500': hasError},
-        'focus:outline-none focus:ring-2 focus:ring-blue-400'
+        'block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 sm:text-sm transition-colors duration-200 bg-white',
+        {'border-red-500 focus:border-red-500 focus:ring-red-500': hasError},
+        {'border-gray-300 focus:border-blue-500 focus:ring-blue-500': !hasError}
       ]"
     >
       <option v-for="option in options" :key="option.value" :value="option.value">
         {{ option.label }}
       </option>
     </select>
-    <p v-if="hasError && errorMessage" class="text-red-500 text-sm mt-1">{{ errorMessage }}</p>
+    <p v-if="hasError && errorMessage" class="text-red-600 text-xs mt-1 min-h-[20px]">{{ errorMessage }}</p>
+    <p v-else class="text-transparent text-xs mt-1 min-h-[20px] select-none">.</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
-
 interface SelectOption {
   label: string;
   value: string;
 }
 
-const props = defineProps({
+defineProps({
   modelValue: {
     type: String,
     required: true
@@ -54,7 +53,3 @@ const updateValue = (event: Event) => {
   emit('update:modelValue', (event.target as HTMLSelectElement).value);
 };
 </script>
-
-<style scoped>
-
-</style>

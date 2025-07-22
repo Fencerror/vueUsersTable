@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-[1.5fr,1fr,1.5fr,1.5fr,0.5fr] gap-4 items-start py-2 border-b border-gray-200">
+  <div class="grid grid-cols-[1.5fr,1fr,1.5fr,1.5fr,0.5fr] gap-4 items-start p-4 hover:bg-gray-50 transition-colors duration-200">
     <BaseInput
       v-model="labelsString"
       placeholder="Метки"
@@ -11,19 +11,20 @@
     <BaseSelect
       v-model="internalAccount.type"
       :options="accountTypeOptions"
-      @change="handleTypeChange"
       :fullWidth="true"
       :hasError="!!validationErrors.type"
       :errorMessage="validationErrors.type || ''"
     />
 
-    <BaseInput
-      v-model="internalAccount.login"
-      placeholder="Логин"
-      :fullWidth="true"
-      :hasError="!!validationErrors.login"
-      :errorMessage="validationErrors.login || ''"
-    />
+    <div class="relative w-full">
+      <BaseInput
+        v-model="internalAccount.login"
+        placeholder="Логин"
+        :fullWidth="true"
+        :hasError="!!validationErrors.login"
+        :errorMessage="validationErrors.login || ''"
+      />
+    </div>
 
     <div class="relative w-full">
       <BaseInput
@@ -38,34 +39,28 @@
       <button
         v-if="internalAccount.type === 'Локальная'"
         @click="togglePasswordVisibility"
-        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-800 h-10"
+        type="button"
+        aria-label="Показать/скрыть пароль"
       >
-        <span v-if="passwordFieldType === 'password'">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </span>
-        <span v-else>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.981 18.75A7.498 7.498 0 0112 15.75a7.498 7.498 0 017.019 2.997V21a4.5 4.5 0 00-2.36-4.085A7.498 7.498 0 0112 15.75c-1.353 0-2.653.242-3.86.685A4.5 4.5 0 005.36 21v-2.25zM12 12a3 3 0 100-6 3 3 0 000 6z" />
-          </svg>
-        </span>
+
       </button>
     </div>
 
-    <button @click="emit('delete', account.id)" class="text-gray-400 hover:text-red-500 justify-self-center">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.176H8.927a2.25 2.25 0 01-2.244-2.176L4.24 6.456m18.04-3.212l-3.21-.803A.75.75 0 0018.75 3H5.25a.75.75 0 00-.745.501l-3.21.803m20.5 0a48.711 48.711 0 00-6.21 0m-2.22 0a48.711 48.711 0 00-6.21 0" />
-      </svg>
-    </button>
+    <div class="flex justify-center items-start h-full">
+        <button @click="emit('delete', account.id)" class="text-gray-500 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors duration-200" aria-label="Удалить запись">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.176H8.927a2.25 2.25 0 01-2.244-2.176L4.24 6.456m18.04-3.212l-3.21-.803A.75.75 0 0018.75 3H5.25a.75.75 0 00-.745.501l-3.21.803M12 3c-1.846 0-3.543.63-4.943 1.688M12 3c1.846 0 3.543.63 4.943 1.688" />
+            </svg>
+        </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, reactive, computed } from 'vue';
-import type { Account, Label } from '../types/account';
-import { validateLabel, validateLogin, validatePassword } from '../utils/validation'; 
+import type { Account } from '../types/account';
+import { validateLabel, validateLogin, validatePassword } from '../utils/validation';
 import BaseInput from './baseInput.vue';
 import BaseSelect from './baseSelect.vue';
 
@@ -116,22 +111,10 @@ const togglePasswordVisibility = () => {
   passwordFieldType.value = passwordFieldType.value === 'password' ? 'text' : 'password';
 };
 
-const handleTypeChange = (value: string) => {
-  internalAccount.type = value as 'Локальная' | 'LDAP';
-  if (internalAccount.type === 'LDAP') {
-    internalAccount.password = null; 
-    validationErrors.password = null; 
-  } else {
-    internalAccount.password = ''; 
-  }
-  validateAndEmitUpdate(); 
-};
-
 const validateFields = () => {
   validationErrors.labels = validateLabel(labelsString.value);
   validationErrors.login = validateLogin(internalAccount.login);
   validationErrors.password = validatePassword(internalAccount.password, internalAccount.type);
-
   return !Object.values(validationErrors).some(error => error !== null);
 };
 
@@ -148,48 +131,41 @@ const emitUpdate = () => {
   emit('update', updatedAccount);
 };
 
-
 let updateTimeout: ReturnType<typeof setTimeout> | null = null;
 const DEBOUNCE_DELAY = 500;
 
 const validateAndEmitUpdate = () => {
-
   if (updateTimeout) {
     clearTimeout(updateTimeout);
   }
   updateTimeout = setTimeout(() => {
-    if (validateFields()) { 
+    if (validateFields()) {
       emitUpdate();
     }
   }, DEBOUNCE_DELAY);
 };
+
+watch(() => internalAccount.type, (newType) => {
+    if (newType === 'LDAP') {
+        internalAccount.password = null;
+        passwordFieldType.value = 'password';
+        validationErrors.password = null;
+    } else if (newType === 'Локальная') {
+        if (internalAccount.password === null) {
+            internalAccount.password = '';
+        }
+    }
+});
 
 watch([internalAccount, labelsString], () => {
   validateAndEmitUpdate();
 }, { deep: true });
 
 watch(() => props.account, (newVal) => {
-  const currentLabelsStr = labelsString.value;
   const newLabelsStr = newVal.labels.map(l => l.text).join(';');
-
-  if (newVal.id !== internalAccount.id ||
-      newVal.type !== internalAccount.type ||
-      newVal.login !== internalAccount.login ||
-      newVal.password !== internalAccount.password ||
-      currentLabelsStr !== newLabelsStr) {
-
-    Object.assign(internalAccount, {
-      id: newVal.id,
-      type: newVal.type,
-      login: newVal.login,
-      password: newVal.password,
-    });
-    labelsString.value = newLabelsStr;
-    validateFields(); 
-  }
-}, { deep: true });
-watch([() => internalAccount.id, () => labelsString.value], () => {
+  Object.assign(internalAccount, newVal);
+  labelsString.value = newLabelsStr;
   validateFields();
-}, { immediate: true });
-</script>
+}, { deep: true });
 
+</script>
