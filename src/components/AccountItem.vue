@@ -1,5 +1,6 @@
 <template>
   <div class="grid grid-cols-[1.5fr,1fr,1.5fr,1.5fr,0.5fr] gap-4 items-start p-4 hover:bg-gray-50 transition-colors duration-200">
+
     <BaseInput
       v-model="labelsString"
       placeholder="Метки"
@@ -43,26 +44,32 @@
         type="button"
         aria-label="Показать/скрыть пароль"
       >
-
       </button>
     </div>
 
     <div class="flex justify-center items-start h-full">
-        <button @click="emit('delete', account.id)" class="text-gray-500 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors duration-200" aria-label="Удалить запись">
+        <button
+          @click="emit('delete', account.id)"
+          class="text-gray-500 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors duration-200"
+          aria-label="Удалить запись"
+        >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.176H8.927a2.25 2.25 0 01-2.244-2.176L4.24 6.456m18.04-3.212l-3.21-.803A.75.75 0 0018.75 3H5.25a.75.75 0 00-.745.501l-3.21.803M12 3c-1.846 0-3.543.63-4.943 1.688M12 3c1.846 0 3.543.63 4.943 1.688" />
             </svg>
         </button>
     </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive, computed } from 'vue';
+
 import type { Account } from '../types/account';
 import { validateLabel, validateLogin, validatePassword } from '../utils/validation';
 import BaseInput from './baseInput.vue';
 import BaseSelect from './baseSelect.vue';
+import { ref, watch, reactive, computed } from 'vue';
+
 
 const props = defineProps<{
   account: Account;
@@ -70,12 +77,18 @@ const props = defineProps<{
 
 const emit = defineEmits(['update', 'delete']);
 
+
 interface ValidationErrors {
   labels: string | null;
   type: string | null;
   login: string | null;
   password: string | null;
 }
+
+const accountTypeOptions = [
+  { label: 'Локальная', value: 'Локальная' },
+  { label: 'LDAP', value: 'LDAP' },
+];
 
 const internalAccount = reactive<Omit<Account, 'labels'>>({
   id: props.account.id,
@@ -86,19 +99,7 @@ const internalAccount = reactive<Omit<Account, 'labels'>>({
 
 const labelsString = ref(props.account.labels.map(l => l.text).join(';'));
 
-const passwordValue = computed({
-  get: () => internalAccount.password === null ? '' : internalAccount.password,
-  set: (value: string) => {
-    internalAccount.password = value;
-  }
-});
-
 const passwordFieldType = ref('password');
-
-const accountTypeOptions = [
-  { label: 'Локальная', value: 'Локальная' },
-  { label: 'LDAP', value: 'LDAP' },
-];
 
 const validationErrors = reactive<ValidationErrors>({
   labels: null,
@@ -107,9 +108,19 @@ const validationErrors = reactive<ValidationErrors>({
   password: null,
 });
 
+
+const passwordValue = computed({
+  get: () => internalAccount.password === null ? '' : internalAccount.password,
+  set: (value: string) => {
+    internalAccount.password = value;
+  }
+});
+
+
 const togglePasswordVisibility = () => {
   passwordFieldType.value = passwordFieldType.value === 'password' ? 'text' : 'password';
 };
+
 
 const validateFields = () => {
   validationErrors.labels = validateLabel(labelsString.value);
@@ -117,6 +128,7 @@ const validateFields = () => {
   validationErrors.password = validatePassword(internalAccount.password, internalAccount.type);
   return !Object.values(validationErrors).some(error => error !== null);
 };
+
 
 const emitUpdate = () => {
   const updatedAccount: Account = {
@@ -131,8 +143,9 @@ const emitUpdate = () => {
   emit('update', updatedAccount);
 };
 
-let updateTimeout: ReturnType<typeof setTimeout> | null = null;
+
 const DEBOUNCE_DELAY = 500;
+let updateTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const validateAndEmitUpdate = () => {
   if (updateTimeout) {
@@ -144,6 +157,7 @@ const validateAndEmitUpdate = () => {
     }
   }, DEBOUNCE_DELAY);
 };
+
 
 watch(() => internalAccount.type, (newType) => {
     if (newType === 'LDAP') {
@@ -157,9 +171,11 @@ watch(() => internalAccount.type, (newType) => {
     }
 });
 
+
 watch([internalAccount, labelsString], () => {
   validateAndEmitUpdate();
 }, { deep: true });
+
 
 watch(() => props.account, (newVal) => {
   const newLabelsStr = newVal.labels.map(l => l.text).join(';');
